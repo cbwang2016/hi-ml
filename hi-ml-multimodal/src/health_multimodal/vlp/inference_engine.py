@@ -141,7 +141,7 @@ class ImageTextInferenceEngine:
                 target_size = cropped_size_orig_space, cropped_size_orig_space
             else:
                 target_size = crop_size, crop_size
-            return reshaped_similarity[0, 0]
+            # return reshaped_similarity[0, 0]
             similarity_map = F.interpolate(
                 reshaped_similarity,
                 size=target_size,

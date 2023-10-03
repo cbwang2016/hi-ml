@@ -49,7 +49,7 @@ class TextInferenceEngine(TextInput):
 
         return tokenizer_output
 
-    @torch.no_grad()
+    # @torch.no_grad()
     def get_embeddings_from_prompt(
         self, prompts: Union[str, List[str]], normalize: bool = True, verbose: bool = True
     ) -> torch.Tensor:

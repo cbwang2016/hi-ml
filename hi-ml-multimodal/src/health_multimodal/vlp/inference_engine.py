@@ -56,7 +56,7 @@ class ImageTextInferenceEngine:
 
     def get_similarity_map_from_raw_data(
         self, image_path: Path, query_text: str, interpolation: str = "nearest"
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         """Return a heatmap of the similarities between each patch embedding from the image and the text embedding.
 
         :param image_path: Path to the input chest X-ray, either a DICOM or JPEG file.
@@ -102,11 +102,13 @@ class ImageTextInferenceEngine:
         assert projected_text_embeddings.shape[0] == 1
         assert projected_text_embeddings.dim() == 2
         patch_wise_similarity = projected_patch_embeddings.view(-1, feature_size) @ projected_text_embeddings.t()
-        patch_wise_similarity = patch_wise_similarity.reshape(n_patches_h, n_patches_w).cpu().numpy()
-        smoothed_similarity_map = torch.tensor(
-            ndimage.gaussian_filter(patch_wise_similarity, sigma=(sigma, sigma), order=0)
-        )
-        return smoothed_similarity_map
+        # patch_wise_similarity = patch_wise_similarity.reshape(n_patches_h, n_patches_w).cpu().numpy()
+        # smoothed_similarity_map = torch.tensor(
+        #     ndimage.gaussian_filter(patch_wise_similarity, sigma=(sigma, sigma), order=0)
+        # )
+        # return smoothed_similarity_map
+        similarity_map = patch_wise_similarity.reshape(n_patches_h, n_patches_w)
+        return similarity_map
 
     @staticmethod
     def convert_similarity_to_image_size(
@@ -117,7 +119,7 @@ class ImageTextInferenceEngine:
         crop_size: Optional[int],
         val_img_transform: Optional[Callable] = None,
         interpolation: str = "nearest",
-    ) -> np.ndarray:
+    ) -> torch.tensor:
         """
         Convert similarity map from raw patch grid to original image size,
         taking into account whether the image has been resized and/or cropped prior to entering the network.
@@ -139,6 +141,7 @@ class ImageTextInferenceEngine:
                 target_size = cropped_size_orig_space, cropped_size_orig_space
             else:
                 target_size = crop_size, crop_size
+            return reshaped_similarity[0, 0]
             similarity_map = F.interpolate(
                 reshaped_similarity,
                 size=target_size,
@@ -147,7 +150,9 @@ class ImageTextInferenceEngine:
             )
             margin_w, margin_h = (width - target_size[0]), (height - target_size[1])
             margins_for_pad = (floor(margin_w / 2), ceil(margin_w / 2), floor(margin_h / 2), ceil(margin_h / 2))
-            similarity_map = F.pad(similarity_map[0, 0], margins_for_pad, value=float("NaN"))
+
+            # Pad with zeros for differentiability instead of NaNs
+            similarity_map = F.pad(similarity_map[0, 0], margins_for_pad, value=0.0)
         else:
             similarity_map = F.interpolate(
                 reshaped_similarity,
@@ -155,7 +160,7 @@ class ImageTextInferenceEngine:
                 mode=interpolation,
                 align_corners=align_corners,
             )[0, 0]
-        return similarity_map.numpy()
+        return similarity_map#.numpy()
 
     def to(self, device: torch.device) -> None:
         """Move models to the specified device."""

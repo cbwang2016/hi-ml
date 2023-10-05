@@ -48,7 +48,7 @@ df = pd.read_csv("../../../label_1024_split.csv")
 text_inference = get_bert_inference(BertEncoderType.BIOVIL_T_BERT)
 image_inference = get_image_inference(ImageModelType.BIOVIL_T)
 
-BioViL = ImageTextModel(image_inference, text_inference, 1024, 1024)
+# BioViL = ImageTextModel(image_inference, text_inference, 1024, 1024)
 print(len(df))
 df_train = df.query('split == "train"')
 
@@ -98,7 +98,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(BioViL.text_inference_engine.model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.text_inference_engine.model.parameters(), lr=0.001)
 
 n_epochs = 10
 # model.to(device)

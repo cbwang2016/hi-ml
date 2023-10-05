@@ -122,14 +122,16 @@ for epoch in range(n_epochs):
         assert similarity_map.shape[1] == 1024
         assert similarity_map.shape[2] == 1024
 
-        for i in range(batch_size):
+        tmp_batch_size = images.shape[0]
+
+        for i in range(tmp_batch_size):
             row_x, row_y, row_w, row_h = (ground_truth_boxes[i]).detach().int()
 
             # Calculate the sum within the box
             sum_val = torch.sum(
                 similarity_map[i][row_x : row_x + row_w, row_y : row_y + row_h]
             )
-            loss -= sum_val / torch.sum(similarity_map[i]) / batch_size
+            loss -= sum_val / torch.sum(similarity_map[i]) / tmp_batch_size
 
         optimizer.zero_grad()
         loss.backward()
